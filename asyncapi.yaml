@@ -1,0 +1,49 @@
+asyncapi: 3.0.0
+info:
+  title: User Service Async API
+  version: 1.0.0
+  description: Async contracts for events published by the User Service to RabbitMQ.
+
+channels:
+  user.events.v1.registered:
+    address: user.events.v1.registered
+    messages:
+      UserRegisteredMessage:
+        $ref: '#/components/messages/UserRegistered'
+
+operations:
+  sendUserRegistered:
+    action: send
+    channel:
+      $ref: '#/channels/user.events.v1.registered'
+    summary: Inform the ecosystem that a new user account has been successfully created.
+
+components:
+  messages:
+    UserRegistered:
+      name: UserRegistered
+      title: User Registered Event
+      summary: Dispatched immediately after successful database commit of a new user.
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - user_id
+          - email
+          - role
+        properties:
+          user_id:
+            type: string
+            format: uuid
+            example: 4fbc87a2-19e0-47cb-b09e-71649d33ed86
+          email:
+            type: string
+            format: email
+            example: student@elearning.com
+          role:
+            type: string
+            example: Student
+          created_at:
+            type: string
+            format: date-time
+            example: "2026-05-16T13:22:45Z"
