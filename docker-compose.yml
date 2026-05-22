@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  user-service:
+    build: .
+    container_name: elearning_user_service
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_SERVER=user-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=user_db
+      - RABBITMQ_URL=amqp://guest:guest@message-broker:5672/
+      - JWT_SECRET=lab_architecture_secret_key_2026_xyz
+    depends_on:
+      user-db:
+        condition: service_healthy 
+      message-broker:
+        condition: service_started
+
+  user-db:
+    image: postgres:15-alpine
+    container_name: elearning_user_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=user_db
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_user_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d user_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  message-broker:
+    image: rabbitmq:3-management-alpine
+    container_name: elearning_message_broker
+    ports:
+      - "5672:5672"   
+      - "15672:15672" 
+    volumes:
+      - rabbitmq_user_data:/var/lib/rabbitmq
+
+volumes:
+  postgres_user_data:
+  rabbitmq_user_data:
