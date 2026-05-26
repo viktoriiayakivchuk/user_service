@@ -4,14 +4,20 @@ from jose import jwt, JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
-from app.repository.user_repository import UserRepository
-from app.services.auth_service import UserBusinessService
+from app.auth_comp import AuthenticationComponent
+from app.profile_comp import ProfileComponent
+from app.admin_comp import AdminComponent
 
 security = HTTPBearer()
 
-async def get_user_service(db: AsyncSession = Depends(get_db)) -> UserBusinessService:
-    repo = UserRepository(db)
-    return UserBusinessService(repo)
+async def get_auth_component(db: AsyncSession = Depends(get_db)) -> AuthenticationComponent:
+    return AuthenticationComponent(db)
+
+async def get_profile_component(db: AsyncSession = Depends(get_db)) -> ProfileComponent:
+    return ProfileComponent(db)
+
+async def get_admin_component(db: AsyncSession = Depends(get_db)) -> AdminComponent:
+    return AdminComponent(db)
 
 async def get_current_user_claims(auth_header: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     try:

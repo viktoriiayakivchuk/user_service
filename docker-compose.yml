@@ -14,10 +14,14 @@ services:
       - POSTGRES_DB=user_db
       - RABBITMQ_URL=amqp://guest:guest@message-broker:5672/
       - JWT_SECRET=lab_architecture_secret_key_2026_xyz
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tracing-system:4317
+      - OTEL_SERVICE_NAME=user-service
     depends_on:
       user-db:
         condition: service_healthy 
       message-broker:
+        condition: service_started
+      tracing-system:
         condition: service_started
 
   user-db:
@@ -46,6 +50,14 @@ services:
       - "15672:15672" 
     volumes:
       - rabbitmq_user_data:/var/lib/rabbitmq
+
+  tracing-system:
+    image: jaegertracing/all-in-one:1.50
+    container_name: elearning_tracing_system
+    ports:
+      - "16686:16686" # Jaeger Web UI
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
 
 volumes:
   postgres_user_data:

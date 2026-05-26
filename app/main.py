@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from app.core.config import settings
-from app.api.auth import router as auth_router
-from app.api.profiles import router as profiles_router
-from app.api.admin import router as admin_router
+from app.api_router.auth import router as auth_router
+from app.api_router.profiles import router as profiles_router
+from app.api_router.admin import router as admin_router
+from app.tracing_client import tracing_client
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -11,6 +12,9 @@ app = FastAPI(
     docs_url="/docs",  
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+
+# Instrument the FastAPI app with OpenTelemetry tracing
+tracing_client.instrument_app(app)
 
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(profiles_router, prefix=settings.API_V1_STR)
