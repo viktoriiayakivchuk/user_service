@@ -1,0 +1,27 @@
+// ERD Model - User Service Database
+
+Table roles {
+  role_id uuid [pk]
+  name varchar(50) [unique, note: 'Student, Instructor, Admin']
+  description varchar(255)
+}
+
+Table users {
+  user_id uuid [pk]
+  email varchar(255) [unique]
+  password_hash varchar(255)
+  role_id uuid [ref: > roles.role_id]
+  is_active boolean
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table profiles {
+  profile_id uuid [pk]
+  user_id uuid [unique, ref: - users.user_id]
+  full_name varchar(100)
+  bio text
+  avatar_url varchar(500)
+  created_at timestamp
+  updated_at timestamp
+}

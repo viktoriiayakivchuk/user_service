@@ -1,0 +1,38 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram (C4) - User Service 
+
+Container(api_gateway, "API Gateway", "Kong", "Single entry point, routes requests, injects trace context, handles global TLS/CORS") #LightBlue
+Container(msg_broker, "Message Broker", "RabbitMQ", "Asynchronous message broker for event-driven communication (carries trace context)") #LightBlue
+ContainerDb(user_db, "User Database", "PostgreSQL", "Stores user credentials, separate roles, and profile data") #LightBlue
+Container(tracing_system, "Distributed Tracing System", "Jaeger / OpenTelemetry", "Collects, visualizes, and stores distributed traces across microservices") #LightPink
+
+Container_Boundary(user_service_boundary, "User Service (FastAPI Microservice)") {
+    Component(api_router, "API Router / App Entry", "FastAPI Application & Middleware", "Handles HTTP routing, request validation via Pydantic, dependency injection, and OpenTelemetry tracing telemetry extraction")
+    Component(auth_comp, "Authentication Component", "Business Service & Repository", "Manages user registration, password hashing, login, and JWT generation")
+    Component(profile_comp, "Profile Component", "Business Service & Repository", "Handles viewing and updating user profile information")
+    Component(admin_comp, "Admin Component", "Business Service & Repository", "Enforces RBAC and allows account locking/deletion by administrators")
+    Component(event_pub, "Event Publisher", "RabbitMQ Client", "Publishes domain events with injected trace contexts to RabbitMQ exchange")
+    Component(tracing_client, "Telemetry / Tracing Agent", "OpenTelemetry SDK", "Asynchronously exports span and trace telemetry data to the central collector")
+}
+
+' Relations
+Rel(api_gateway, api_router, "Forwards REST/HTTP requests (with trace headers)", "JSON/HTTP")
+Rel(api_router, auth_comp, "Invokes auth actions")
+Rel(api_router, profile_comp, "Invokes profile actions")
+Rel(api_router, admin_comp, "Invokes admin actions")
+
+Rel(auth_comp, user_db, "Reads/Writes", "SQLAlchemy 2.0 (Async)")
+Rel(profile_comp, user_db, "Reads/Writes", "SQLAlchemy 2.0 (Async)")
+Rel(admin_comp, user_db, "Reads/Writes", "SQLAlchemy 2.0 (Async)")
+
+Rel(auth_comp, event_pub, "Triggers domain events")
+Rel(event_pub, msg_broker, "Publishes events (injects trace metadata)", "AMQP")
+
+' New Tracing Relations
+Rel(api_router, tracing_client, "Reports HTTP span data")
+Rel(event_pub, tracing_client, "Reports AMQP publish span data")
+Rel(tracing_client, tracing_system, "Exports trace telemetry (asynchronously)", "gRPC / OTLP")
+
+@enduml
